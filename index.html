@@ -2669,4 +2669,134 @@ $("#show-sidebar").click(function() {
 <div id="noCardsPlaceholder2" style="display: none;">
   
   </div>
+<script>
+    // Load tasks and members from localStorage on page load
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    let members = JSON.parse(localStorage.getItem("members")) || [];
 
+    function renderTasks() {
+        const table = $("#task-table tbody");
+        table.empty();
+        tasks.forEach((task, index) => {
+            table.append(`
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${task.name}</td>
+                    <td>${task.description}</td>
+                    <td><span class="badge badge-pill badge-${task.state === 'Ended' ? 'success' : 'primary'}">${task.state}</span></td>
+                    <td>
+                        <button class="btn btn-link btn-sm edit-task" data-id="${index}">Edit</button>
+                        <button class="btn btn-link btn-sm text-danger delete-task" data-id="${index}">Delete</button>
+                    </td>
+                </tr>
+            `);
+        });
+    }
+
+    function renderMembers() {
+        const table = $("#team-table tbody");
+        table.empty();
+        members.forEach((member, index) => {
+            table.append(`
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${member.name}</td>
+                    <td>${member.role}</td>
+                    <td>${member.email}</td>
+                    <td>
+                        <button class="btn btn-link btn-sm edit-member" data-id="${index}">Edit</button>
+                        <button class="btn btn-link btn-sm text-danger delete-member" data-id="${index}">Delete</button>
+                    </td>
+                </tr>
+            `);
+        });
+    }
+
+    // Task Handlers
+    $("#save-task").on("click", function () {
+        const id = $("#task-id").val();
+        const task = {
+            name: $("#task-name").val(),
+            description: $("#task-desc").val(),
+            state: $("#task-state").val(),
+        };
+
+        if (id) {
+            tasks[id] = task;
+        } else {
+            tasks.push(task);
+        }
+
+        localStorage.setItem("tasks", JSON.stringify(tasks)); // Save to localStorage
+        $("#addTaskModal").modal("hide");
+        renderTasks();
+    });
+
+    $(document).on("click", ".edit-task", function () {
+        const id = $(this).data("id");
+        const task = tasks[id];
+        $("#task-id").val(id);
+        $("#task-name").val(task.name);
+        $("#task-desc").val(task.description);
+        $("#task-state").val(task.state);
+        $("#addTaskModal").modal("show");
+    });
+
+    $(document).on("click", ".delete-task", function () {
+        const id = $(this).data("id");
+        tasks.splice(id, 1);
+        localStorage.setItem("tasks", JSON.stringify(tasks)); // Save to localStorage
+        renderTasks();
+    });
+
+    // Member Handlers
+    $("#save-member").on("click", function () {
+        const id = $("#member-id").val();
+        const member = {
+            name: $("#member-name").val(),
+            role: $("#member-role").val(),
+            email: $("#member-email").val(),
+        };
+
+        if (id) {
+            members[id] = member;
+        } else {
+            members.push(member);
+        }
+
+        localStorage.setItem("members", JSON.stringify(members)); // Save to localStorage
+        $("#addMemberModal").modal("hide");
+        renderMembers();
+    });
+
+    $(document).on("click", ".edit-member", function () {
+        const id = $(this).data("id");
+        const member = members[id];
+        $("#member-id").val(id);
+        $("#member-name").val(member.name);
+        $("#member-role").val(member.role);
+        $("#member-email").val(member.email);
+        $("#addMemberModal").modal("show");
+    });
+
+    $(document).on("click", ".delete-member", function () {
+        const id = $(this).data("id");
+        members.splice(id, 1);
+        localStorage.setItem("members", JSON.stringify(members)); // Save to localStorage
+        renderMembers();
+    });
+
+    // Progress Update
+    $("#update-progress").on("click", function () {
+        const progressValue = $("#progress-input").val();
+        if (progressValue >= 0 && progressValue <= 100) {
+            $("#progress-bar").css("width", progressValue + "%").attr("aria-valuenow", progressValue).text(progressValue + "%");
+        } else {
+            alert("Please enter a valid percentage (0-100)");
+        }
+    });
+
+    // Initial render
+    renderTasks();
+    renderMembers();
+</script>
