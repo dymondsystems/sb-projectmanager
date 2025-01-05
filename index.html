@@ -2683,8 +2683,9 @@ $("#show-sidebar").click(function() {
                     <td>${index + 1}</td>
                     <td>${task.name}</td>
                     <td>${task.description}</td>
-                    <td><span class="badge badge-pill badge- ${task.state === 'Ended' ? 'success' : 'primary'}">${task.state}</span></td>
+		    <td><span class="badge badge-pill badge-${task.state === 'Ended' ? 'success' : 'primary'}">${task.state}</span></td>
                     <td>
+                   
                         <button class="btn btn-link btn-sm edit-task" data-id="${index}">Edit</button>
                         <button class="btn btn-link btn-sm text-danger delete-task" data-id="${index}">Delete</button>
                     </td>
