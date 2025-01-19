@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management App</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div class="container py-4">
+        <h1 class="text-center mb-4">Project Management</h1>
+        
+        <!-- Add Project Button -->
+        <div class="mb-4 text-right">
+            <button class="btn btn-primary" id="addProjectBtn">Add Project</button>
+        </div>
+
+        <!-- Project Cards Row -->
+        <div class="row" id="project-cards">
+            <!-- Dynamic project cards will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Add/Edit Project Modal -->
+    <div class="modal fade" id="projectModal" tabindex="-1" role="dialog" aria-labelledby="projectModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="projectModalLabel">Add Project</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="projectForm">
+                        <div class="form-group">
+                            <label for="projectTitle">Project Title</label>
+                            <input type="text" class="form-control" id="projectTitle" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="projectDescription">Description</label>
+                            <textarea class="form-control" id="projectDescription" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Details Modal -->
+    <div class="modal fade" id="projectDetailsModal" tabindex="-1" role="dialog" aria-labelledby="projectDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="projectDetailsModalLabel">Project Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <h5 id="detailsProjectTitle"></h5>
+                    <p id="detailsProjectDescription"></p>
+
+                    <h6>Tasks</h6>
+                    <div id="task-list" class="mb-3">
+                        <!-- Dynamic task list will be inserted here -->
+                    </div>
+
+                    <form id="taskForm">
+                        <div class="form-group">
+                            <label for="taskTitle">Task Title</label>
+                            <input type="text" class="form-control" id="taskTitle" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskDescription">Task Description</label>
+                            <textarea class="form-control" id="taskDescription" rows="2" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success">Add Task</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        const projectCards = document.getElementById('project-cards');
+        const projectModal = new bootstrap.Modal(document.getElementById('projectModal'));
+        const projectDetailsModal = new bootstrap.Modal(document.getElementById('projectDetailsModal'));
+        const projectForm = document.getElementById('projectForm');
+        const taskForm = document.getElementById('taskForm');
+        const addProjectBtn = document.getElementById('addProjectBtn');
+        const detailsProjectTitle = document.getElementById('detailsProjectTitle');
+        const detailsProjectDescription = document.getElementById('detailsProjectDescription');
+        const taskList = document.getElementById('task-list');
+        let projects = JSON.parse(localStorage.getItem('projects')) || [];
+
+        // Function to render project cards
+        function renderProjects() {
+            projectCards.innerHTML = '';
+            projects.forEach((project, index) => {
+                const card = document.createElement('div');
+                card.className = 'col-md-3 mb-4';
+                card.innerHTML = `
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${project.title}</h5>
+                            <p class="card-text text-truncate" style="max-height: 75px; overflow: hidden;">${project.description}</p>
+                            <button class="btn btn-primary btn-block mt-3" onclick="viewProject(${index})">View Project</button>
+                            <button class="btn btn-warning btn-block mt-1" onclick="editProject(${index})">Edit Project</button>
+                            <button class="btn btn-danger btn-block mt-1" onclick="deleteProject(${index})">Delete Project</button>
+                        </div>
+                    </div>
+                `;
+                projectCards.appendChild(card);
+            });
+        }
+
+        // Function to handle form submission
+        projectForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('projectTitle').value;
+            const description = document.getElementById('projectDescription').value;
+            const isEditing = projectForm.dataset.editIndex !== undefined;
+
+            if (isEditing) {
+                const index = projectForm.dataset.editIndex;
+                projects[index].title = title;
+                projects[index].description = description;
+                delete projectForm.dataset.editIndex;
+            } else {
+                projects.push({ title, description, tasks: [] });
+            }
+
+            localStorage.setItem('projects', JSON.stringify(projects));
+            projectForm.reset();
+            projectModal.hide();
+            renderProjects();
+        });
+
+        // Open modal for adding a new project
+        addProjectBtn.addEventListener('click', () => {
+            document.getElementById('projectTitle').value = '';
+            document.getElementById('projectDescription').value = '';
+            delete projectForm.dataset.editIndex;
+            projectModal.show();
+        });
+
+        // Edit a project
+        function editProject(index) {
+            const project = projects[index];
+            document.getElementById('projectTitle').value = project.title;
+            document.getElementById('projectDescription').value = project.description;
+            projectForm.dataset.editIndex = index;
+            projectModal.show();
+        }
+
+        // Delete a project
+        function deleteProject(index) {
+            if (confirm('Are you sure you want to delete this project?')) {
+                projects.splice(index, 1);
+                localStorage.setItem('projects', JSON.stringify(projects));
+                renderProjects();
+            }
+        }
+
+        // Function to view project details
+        function viewProject(index) {
+            const project = projects[index];
+            detailsProjectTitle.textContent = project.title;
+            detailsProjectDescription.textContent = project.description;
+
+            renderTasks(index);
+
+            taskForm.onsubmit = function (e) {
+                e.preventDefault();
+                const taskTitle = document.getElementById('taskTitle').value;
+                const taskDescription = document.getElementById('taskDescription').value;
+
+                project.tasks.push({ title: taskTitle, description: taskDescription });
+                localStorage.setItem('projects', JSON.stringify(projects));
+
+                renderTasks(index);
+                taskForm.reset();
+            };
+
+            projectDetailsModal.show();
+        }
+
+        // Function to render tasks
+        function renderTasks(projectIndex) {
+            const project = projects[projectIndex];
+            taskList.innerHTML = '';
+            project.tasks.forEach((task, taskIndex) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'mb-2';
+                taskItem.innerHTML = `
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">${task.title}</h6>
+                            <p class="card-text">${task.description}</p>
+                            <button class="btn btn-warning btn-sm" onclick="editTask(${projectIndex}, ${taskIndex})">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteTask(${projectIndex}, ${taskIndex})">Delete</button>
+                        </div>
+                    </div>
+                `;
+                taskList.appendChild(taskItem);
+            });
+        }
+
+        // Edit a task
+        function editTask(projectIndex, taskIndex) {
+            const task = projects[projectIndex].tasks[taskIndex];
+            document.getElementById('taskTitle').value = task.title;
+            document.getElementById('taskDescription').value = task.description;
+
+            taskForm.onsubmit = function (e) {
+                e.preventDefault();
+                task.title = document.getElementById('taskTitle').value;
+                task.description = document.getElementById('taskDescription').value;
+                localStorage.setItem('projects', JSON.stringify(projects));
+                renderTasks(projectIndex);
+                taskForm.reset();
+            };
+        }
+
+                // Delete a task
+        function deleteTask(projectIndex, taskIndex) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                projects[projectIndex].tasks.splice(taskIndex, 1);
+                localStorage.setItem('projects', JSON.stringify(projects));
+                renderTasks(projectIndex);
+            }
+        }
+  </script>
